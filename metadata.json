@@ -1,0 +1,6 @@
+{
+  "name": "보험플러스 - 맞춤 간병인 보험 비교",
+  "description": "20년 차 전문가가 설계하는 맞춤 간병인 보험 무료 비교 견적 서비스",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
