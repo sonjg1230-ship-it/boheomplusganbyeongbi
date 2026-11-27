@@ -154,10 +154,39 @@ export default function App() {
         body: JSON.stringify(payload)
       });
 
-      const data = await res.json();
+      const rawText = await res.text();
+      let data: { success?: boolean; error?: string } | null = null;
+      try {
+        data = rawText ? JSON.parse(rawText) : null;
+      } catch {
+        data = null;
+      }
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || '접수 중 오류가 발생했습니다.');
+      if (!res.ok || !data?.success) {
+        // If backend endpoint is unavailable (e.g. static deploy), forward directly to Formspree
+        if (res.status === 404 || !data) {
+          const fsRes = await fetch('https://formspree.io/f/xrpqjlbl', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              target: payload.target,
+              name: payload.userName,
+              gender: payload.gender,
+              birthDate: payload.birthDate,
+              phone: payload.userPhone,
+              _to: 'sonjg1230@gmail.com',
+              message: `[보험플러스] 신규 간병보험 상담신청 - 대상: ${payload.target}, 성함: ${payload.userName}, 성별: ${payload.gender}, 생년월일: ${payload.birthDate}, 연락처: ${payload.userPhone}`
+            })
+          });
+          if (!fsRes.ok) {
+            throw new Error('접수 중 오류가 발생했습니다.');
+          }
+        } else {
+          throw new Error(data.error || '접수 중 오류가 발생했습니다.');
+        }
       }
 
       setSuccessData(payload);
@@ -175,8 +204,10 @@ export default function App() {
   const fetchLeads = async () => {
     try {
       const res = await fetch('/api/leads');
-      const data = await res.json();
-      if (data.success) {
+      if (!res.ok) return;
+      const rawText = await res.text();
+      const data = rawText ? JSON.parse(rawText) : null;
+      if (data?.success && Array.isArray(data.leads)) {
         setLeads(data.leads);
       }
     } catch (e) {
